@@ -52,15 +52,20 @@ const App: React.FC = () => {
   };
 
   const connectToGemini = useCallback(async () => {
-    if (session.current || connectionStatus === 'connected' || !process.env.API_KEY) {
+    if (session.current || connectionStatus === 'connected') {
         return;
+    }
+    if (!process.env.API_KEY) {
+      console.error("API_KEY environment variable not set. The application cannot connect to the Gemini API.");
+      setConnectionStatus('error');
+      return;
     }
     setConnectionStatus('connecting');
 
     try {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const config = {
-            responseModalities: [Modality.AUDIO, Modality.TEXT],
+            responseModalities: [Modality.AUDIO],
             mediaResolution: MediaResolution.MEDIA_RESOLUTION_MEDIUM,
             speechConfig: {
                 voiceConfig: {
@@ -468,8 +473,14 @@ Keep your responses concise but helpful, as this is a voice interface. Always co
             callbacks: {
                 onopen: () => setConnectionStatus('connected'),
                 onmessage: handleMessage,
-                onerror: () => setConnectionStatus('error'),
-                onclose: () => setConnectionStatus('disconnected'),
+                onerror: (e: ErrorEvent) => {
+                  console.error('Connection Error:', e.message);
+                  setConnectionStatus('error');
+                },
+                onclose: (e: CloseEvent) => {
+                  console.log('Connection Closed:', e.reason, `Code: ${e.code}`);
+                  setConnectionStatus('disconnected');
+                },
             },
             config
         });
