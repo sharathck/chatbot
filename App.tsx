@@ -291,70 +291,6 @@ Keep your responses concise but helpful, as this is a voice interface. Always co
         ]
       },
       {
-        "category_name": "Lamb Dishes",
-        "items": [
-          {
-            "name": "Lamb Kashmiri",
-            "price": 14.25,
-            "description": "Lamb chops cooked in onion, garlic, ginger and peach sauce",
-            "tags": ["lamb", "main_course"]
-          },
-          {
-            "name": "Lamb Danshik",
-            "price": 15.25,
-            "description": "Boneless lamb, pineapples and lentils cooked with pineapple and herbs",
-            "tags": ["lamb", "lentils", "main_course"]
-          },
-          {
-            "name": "Lamb Broccoli",
-            "price": 14.25,
-            "description": "Boneless chunks of lamb and broccoli cooked in spicy sauce",
-            "tags": ["lamb", "broccoli", "spicy", "main_course"]
-          },
-          {
-            "name": "Lamb Vindaloo",
-            "price": 14.25,
-            "description": "Boneless chunks of lamb and potatoes cooked in a spicy sauce",
-            "tags": ["lamb", "vindaloo", "spicy", "potato", "main_course"]
-          },
-          {
-            "name": "Lamb Achari",
-            "price": 13.95,
-            "description": "Boneless chunks of lamb and pickling spices",
-            "tags": ["lamb", "achari", "spicy", "main_course"]
-          }
-        ]
-      },
-      {
-        "category_name": "Beef Dishes",
-        "items": [
-          {
-            "name": "Beef Vindaloo",
-            "price": 13.95,
-            "description": "Boneless beef chunks and potato cooked in a spicy sauce",
-            "tags": ["beef", "vindaloo", "spicy", "potato", "main_course"]
-          },
-          {
-            "name": "Beef Broccoli",
-            "price": 13.95,
-            "description": "Boneless beef chunks and broccoli served cooked in a spicy sauce",
-            "tags": ["beef", "broccoli", "spicy", "main_course"]
-          },
-          {
-            "name": "Beef Shai Korma",
-            "price": 14.25,
-            "description": "Boneless beef chunks cooked in spicy sauce with almonds and cashews",
-            "tags": ["beef", "korma", "spicy", "contains_nuts", "main_course"]
-          },
-          {
-            "name": "Beef Saagwala",
-            "price": 14.95,
-            "description": "Boneless beef chunks cooked in spicy sauce with spinach and herbs",
-            "tags": ["beef", "saag", "spinach", "spicy", "main_course"]
-          }
-        ]
-      },
-      {
         "category_name": "Chicken Dishes",
         "items": [
           {
@@ -509,6 +445,13 @@ Keep your responses concise but helpful, as this is a voice interface. Always co
 
   const { isListening, startListening, stopListening } = useVoiceRecognition({ onTranscript });
   
+  // Auto-start listening when connected
+  useEffect(() => {
+    if (connectionStatus === 'connected' && !isListening) {
+      startListening();
+    }
+  }, [connectionStatus, isListening, startListening]);
+  
   const handleMicClick = () => {
     // If not connected, this click is to connect/retry.
     if (!session.current && (connectionStatus === 'disconnected' || connectionStatus === 'error')) {
@@ -566,8 +509,8 @@ Keep your responses concise but helpful, as this is a voice interface. Always co
             : isProcessing
             ? 'Agent is responding...'
             : isListening
-            ? 'Listening...'
-            : 'Click the mic to speak'}
+            ? 'Listening... (click mic to pause)'
+            : 'Microphone paused (click to resume)'}
         </p>
       </footer>
       <audio ref={audioPlayer} className="hidden" />
