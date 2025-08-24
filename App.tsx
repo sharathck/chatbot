@@ -89,7 +89,7 @@ Keep your responses concise but helpful, as this is a voice interface. Always co
 \`\`\`json
 [
   {
-    "restaurant_name": "Triveni Express, Richmod, TX",
+    "restaurant_name": "Triveni Express",
     "contact_info": {
       "address": "W. 5th Avenue, Richmond, TX",
       "phone": "(500) 550-5000",
@@ -282,35 +282,11 @@ Keep your responses concise but helpful, as this is a voice interface. Always co
             "description": "Homemade cheese and root vegetables topped with cashews and cilantro, served over basmati rice",
             "tags": ["vegetarian", "paneer", "cheese", "biryani", "rice", "contains_nuts"]
           },
-               {
-            "name": "Vegetable Biryani",
-            "price": 9.25,
-            "description": "Vegetable medley topped with cashews and cilantro, served over basmati rice",
-            "tags": ["vegetarian", "biryani", "rice", "contains_nuts"]
-          },
-          {
-            "name": "Chicken Biryani",
-            "price": 10.95,
-            "description": "Tender marinated chicken, topped with cashews and cilantro, served over basmati rice",
-            "tags": ["chicken", "biryani", "rice", "contains_nuts"]
-          },
           {
             "name": "Shrimp and Scallop Biryani",
             "price": 16.95,
             "description": "Seared scallops and shrimp, topped with cashews and cilantro, served over basmati rice",
             "tags": ["seafood", "shrimp", "scallop", "biryani", "rice", "contains_nuts"]
-          },
-          {
-            "name": "Eggplant Biryani",
-            "price": 9.25,
-            "description": "Roasted eggplant, topped with cashews and cilantro, served over basmati rice",
-            "tags": ["vegetarian", "eggplant", "biryani", "rice", "contains_nuts"]
-          },
-          {
-            "name": "Paneer Biryani",
-            "price": 9.25,
-            "description": "Homemade cheese and root vegetables, topped with cashews and cilantro, served over basmati rice",
-            "tags": ["vegetarian", "paneer", "cheese", "biryani", "rice", "contains_nuts"]
           }
         ]
       },
