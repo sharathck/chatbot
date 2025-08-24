@@ -468,6 +468,27 @@ Keep your responses concise but helpful, as this is a voice interface. Always co
       }
     }
   };
+
+  const handleStopSession = () => {
+    // Stop microphone listening
+    stopListening();
+    
+    // Stop any playing audio
+    if (audioPlayer.current) {
+      audioPlayer.current.pause();
+      audioPlayer.current.currentTime = 0;
+    }
+    
+    // Close the session connection
+    if (session.current) {
+      session.current.close();
+      session.current = null;
+    }
+    
+    // Reset connection status
+    setConnectionStatus('disconnected');
+    setIsProcessing(false);
+  };
   
   return (
     <div className="flex flex-col h-screen bg-gray-900 text-white font-sans">
@@ -493,12 +514,25 @@ Keep your responses concise but helpful, as this is a voice interface. Always co
       </main>
 
       <footer className="bg-gray-800/50 backdrop-blur-sm p-4 flex flex-col items-center justify-center border-t border-gray-700">
-        <MicrophoneButton
-          isListening={isListening}
-          isProcessing={isProcessing}
-          onClick={handleMicClick}
-          disabled={connectionStatus === 'connecting'}
-        />
+        <div className="flex items-center space-x-4">
+          <MicrophoneButton
+            isListening={isListening}
+            isProcessing={isProcessing}
+            onClick={handleMicClick}
+            disabled={connectionStatus === 'connecting'}
+          />
+          {connectionStatus === 'connected' && (
+            <button
+              onClick={handleStopSession}
+              className="flex items-center justify-center w-12 h-12 bg-red-600 hover:bg-red-700 rounded-full transition-colors duration-200"
+              title="End session"
+            >
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          )}
+        </div>
         <p className="text-xs text-gray-400 mt-2 h-4">
           {connectionStatus === 'connecting'
             ? 'Connecting to agent...'
