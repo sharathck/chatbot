@@ -29,10 +29,12 @@ const App: React.FC = () => {
     }
 
     if (message.serverContent?.turnComplete) {
-      setMessages(prev => [
-        ...prev,
-        { id: Date.now(), role: 'model', text: responseText.current },
-      ]);
+      if (responseText.current) {
+        setMessages(prev => [
+          ...prev,
+          { id: Date.now(), role: 'model', text: responseText.current },
+        ]);
+      }
       
       if (responseAudioChunks.current.length > 0) {
         const firstPart = message.serverContent?.modelTurn?.parts?.find(p => p.inlineData);
@@ -65,6 +67,7 @@ const App: React.FC = () => {
     try {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const config = {
+            thinkingConfig: { thinkingBudget: 0 },
             responseModalities: [Modality.AUDIO],
             mediaResolution: MediaResolution.MEDIA_RESOLUTION_MEDIUM,
             speechConfig: {
@@ -468,10 +471,13 @@ Keep your responses concise but helpful, as this is a voice interface. Always co
                 }]
             },
         };
+
         const newSession = await ai.live.connect({
             model: 'models/gemini-2.5-flash-preview-native-audio-dialog',
             callbacks: {
-                onopen: () => setConnectionStatus('connected'),
+                onopen: () => {
+                  setConnectionStatus('connected');
+                },
                 onmessage: handleMessage,
                 onerror: (e: ErrorEvent) => {
                   console.error('Connection Error:', e.message);
@@ -484,7 +490,16 @@ Keep your responses concise but helpful, as this is a voice interface. Always co
             },
             config
         });
+
         session.current = newSession;
+
+        // Proactively trigger the agent's greeting *after* the session is established.
+        // This avoids the ReferenceError by ensuring `newSession` is initialized.
+        newSession.sendClientContent({
+          turns: [{ text: 'Hello' }]
+        });
+        setIsProcessing(true);
+
     } catch (error) {
         console.error("Connection failed:", error);
         setConnectionStatus('error');
@@ -551,7 +566,7 @@ Keep your responses concise but helpful, as this is a voice interface. Always co
           disabled={connectionStatus !== 'connected'}
         />
         <p className="text-xs text-gray-400 mt-2 h-4">
-          {isListening ? 'Listening...' : (connectionStatus === 'connected' ? 'Click the mic to speak' : 'Connecting to agent...')}
+          {isListening ? 'Listening...' : (connectionStatus === 'connected' ? (isProcessing ? 'Agent is responding...' : 'Click the mic to speak') : 'Connecting to agent...')}
         </p>
       </footer>
       <audio ref={audioPlayer} className="hidden" />

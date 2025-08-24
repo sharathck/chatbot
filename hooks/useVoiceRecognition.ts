@@ -61,7 +61,9 @@ export const useVoiceRecognition = ({ onTranscript }: VoiceRecognitionOptions) =
     }
 
     const rec = new SpeechRecognitionAPI();
-    rec.continuous = true;
+    // Set continuous to false. The browser will automatically stop listening 
+    // when it detects a pause in speech. This is ideal for a command-based chat interface.
+    rec.continuous = false;
     rec.interimResults = false;
     rec.lang = 'en-US';
 
@@ -70,6 +72,7 @@ export const useVoiceRecognition = ({ onTranscript }: VoiceRecognitionOptions) =
     };
 
     rec.onend = () => {
+      // onend fires automatically when recognition stops, either by API call or end of speech.
       setIsListening(false);
     };
 
@@ -79,10 +82,8 @@ export const useVoiceRecognition = ({ onTranscript }: VoiceRecognitionOptions) =
     };
 
     rec.onresult = (event) => {
-      const transcript = Array.from(event.results)
-        .map(result => result[0])
-        .map(result => result.transcript)
-        .join('');
+      // Since continuous is false, we'll only get one result event with the final transcript.
+      const transcript = event.results[0][0].transcript.trim();
       if (transcript) {
         onTranscript(transcript);
       }
@@ -90,6 +91,7 @@ export const useVoiceRecognition = ({ onTranscript }: VoiceRecognitionOptions) =
     
     recognition.current = rec;
 
+    // Cleanup: ensure recognition is stopped when the component unmounts.
     return () => {
       rec.stop();
     };
@@ -102,6 +104,7 @@ export const useVoiceRecognition = ({ onTranscript }: VoiceRecognitionOptions) =
   }, [isListening]);
 
   const stopListening = useCallback(() => {
+    // This now acts as a "cancel" button during recognition.
     if (recognition.current && isListening) {
       recognition.current.stop();
     }
