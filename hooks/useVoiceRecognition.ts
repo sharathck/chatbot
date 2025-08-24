@@ -53,7 +53,6 @@ const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechReco
 export const useVoiceRecognition = ({ onTranscript }: VoiceRecognitionOptions) => {
   const [isListening, setIsListening] = useState(false);
   const recognition = useRef<SpeechRecognition | null>(null);
-  const shouldBeListening = useRef(false);
 
   useEffect(() => {
     if (!SpeechRecognitionAPI) {
@@ -62,9 +61,9 @@ export const useVoiceRecognition = ({ onTranscript }: VoiceRecognitionOptions) =
     }
 
     const rec = new SpeechRecognitionAPI();
-    // Set continuous to true to keep listening throughout the session
-    // Set interimResults to false to only get final results immediately
-    rec.continuous = true;
+    // Set continuous to false. The browser will automatically stop listening 
+    // when it detects a pause in speech. This is ideal for a command-based chat interface.
+    rec.continuous = false;
     rec.interimResults = false;
     rec.lang = 'en-US';
 
@@ -73,43 +72,20 @@ export const useVoiceRecognition = ({ onTranscript }: VoiceRecognitionOptions) =
     };
 
     rec.onend = () => {
-      // Auto-restart listening if it was manually stopped due to silence
-      // Only restart if we're supposed to be listening
+      // onend fires automatically when recognition stops, either by API call or end of speech.
       setIsListening(false);
-      if (shouldBeListening.current) {
-        setTimeout(() => {
-          if (recognition.current && shouldBeListening.current) {
-            recognition.current.start();
-          }
-        }, 100);
-      }
     };
 
     rec.onerror = (event) => {
       console.error('Speech recognition error', event.error);
       setIsListening(false);
-      // Auto-restart on certain errors, but not on permission errors
-      if (event.error !== 'not-allowed' && event.error !== 'service-not-allowed' && shouldBeListening.current) {
-        setTimeout(() => {
-          if (recognition.current && shouldBeListening.current) {
-            recognition.current.start();
-          }
-        }, 1000);
-      } else if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
-        shouldBeListening.current = false;
-      }
     };
 
     rec.onresult = (event) => {
-      // Process only final results for immediate capture
-      for (let i = event.results.length - 1; i >= 0; i--) {
-        if (event.results[i].isFinal) {
-          const transcript = event.results[i][0].transcript.trim();
-          if (transcript) {
-            onTranscript(transcript);
-            break; // Only process the most recent final result
-          }
-        }
+      // Since continuous is false, we'll only get one result event with the final transcript.
+      const transcript = event.results[0][0].transcript.trim();
+      if (transcript) {
+        onTranscript(transcript);
       }
     };
     
@@ -123,14 +99,12 @@ export const useVoiceRecognition = ({ onTranscript }: VoiceRecognitionOptions) =
 
   const startListening = useCallback(() => {
     if (recognition.current && !isListening) {
-      shouldBeListening.current = true;
       recognition.current.start();
     }
   }, [isListening]);
 
   const stopListening = useCallback(() => {
     // This now acts as a "cancel" button during recognition.
-    shouldBeListening.current = false;
     if (recognition.current && isListening) {
       recognition.current.stop();
     }
