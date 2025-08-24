@@ -54,7 +54,7 @@ const App: React.FC = () => {
   };
 
   const connectToGemini = useCallback(async () => {
-    if (session.current || connectionStatus === 'connected') {
+    if (session.current || connectionStatus === 'connecting') {
         return;
     }
     if (!process.env.API_KEY) {
@@ -63,6 +63,7 @@ const App: React.FC = () => {
       return;
     }
     setConnectionStatus('connecting');
+    setIsProcessing(true); // Agent will be "processing" the initial greeting
 
     try {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
@@ -482,10 +483,12 @@ Keep your responses concise but helpful, as this is a voice interface. Always co
                 onerror: (e: ErrorEvent) => {
                   console.error('Connection Error:', e.message);
                   setConnectionStatus('error');
+                  setIsProcessing(false);
                 },
                 onclose: (e: CloseEvent) => {
                   console.log('Connection Closed:', e.reason, `Code: ${e.code}`);
                   setConnectionStatus('disconnected');
+                  setIsProcessing(false);
                 },
             },
             config
@@ -493,26 +496,29 @@ Keep your responses concise but helpful, as this is a voice interface. Always co
 
         session.current = newSession;
 
-        // Proactively trigger the agent's greeting *after* the session is established.
-        // This avoids the ReferenceError by ensuring `newSession` is initialized.
+        // Proactively trigger the agent's greeting. Since this function is now called
+        // from a user gesture (handleMicClick), audio playback will be allowed.
         newSession.sendClientContent({
           turns: [{ text: 'Hello' }]
         });
-        setIsProcessing(true);
 
     } catch (error) {
         console.error("Connection failed:", error);
         setConnectionStatus('error');
+        setIsProcessing(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
-    connectToGemini();
+    // This effect ensures the session is closed when the component unmounts.
     return () => {
-        session.current?.close();
+        if (session.current) {
+            session.current.close();
+            session.current = null;
+        }
     };
-  }, [connectToGemini]);
+  }, []);
 
   const onTranscript = useCallback((transcript: string) => {
     if (!transcript || !session.current || connectionStatus !== 'connected') {
@@ -528,10 +534,19 @@ Keep your responses concise but helpful, as this is a voice interface. Always co
   const { isListening, startListening, stopListening } = useVoiceRecognition({ onTranscript });
   
   const handleMicClick = () => {
-    if (isListening) {
-      stopListening();
-    } else {
-      startListening();
+    // If not connected, this click is to connect/retry.
+    if (!session.current && (connectionStatus === 'disconnected' || connectionStatus === 'error')) {
+      connectToGemini();
+      return;
+    }
+
+    // If connected, this click is to toggle listening.
+    if (connectionStatus === 'connected') {
+      if (isListening) {
+        stopListening();
+      } else {
+        startListening();
+      }
     }
   };
   
@@ -563,10 +578,20 @@ Keep your responses concise but helpful, as this is a voice interface. Always co
           isListening={isListening}
           isProcessing={isProcessing}
           onClick={handleMicClick}
-          disabled={connectionStatus !== 'connected'}
+          disabled={connectionStatus === 'connecting'}
         />
         <p className="text-xs text-gray-400 mt-2 h-4">
-          {isListening ? 'Listening...' : (connectionStatus === 'connected' ? (isProcessing ? 'Agent is responding...' : 'Click the mic to speak') : 'Connecting to agent...')}
+          {connectionStatus === 'connecting'
+            ? 'Connecting to agent...'
+            : connectionStatus === 'error'
+            ? 'Connection failed. Click to retry.'
+            : connectionStatus === 'disconnected'
+            ? 'Click the mic to connect'
+            : isProcessing
+            ? 'Agent is responding...'
+            : isListening
+            ? 'Listening...'
+            : 'Click the mic to speak'}
         </p>
       </footer>
       <audio ref={audioPlayer} className="hidden" />
