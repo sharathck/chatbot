@@ -1,0 +1,7 @@
+{
+  "name": "Voice Chat Bot Live Agent",
+  "description": "An interactive voice-based chat application that connects to a live Gemini agent to provide real-time conversational assistance for a restaurant.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
